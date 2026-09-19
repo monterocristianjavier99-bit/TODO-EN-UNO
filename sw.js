@@ -1,13 +1,9 @@
-const CACHE='todo-en-uno-v62';
+const CACHE='todo-en-uno-v63';
 const SHELL=['./','./index.html','./version.json'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE)
-      .then(c=>c.addAll(SHELL))
-      .catch(()=>{})
-  );
+  event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL).catch(()=>{})));
 });
 
 self.addEventListener('activate',event=>{
@@ -25,19 +21,14 @@ self.addEventListener('fetch',event=>{
   const url=new URL(req.url);
   if(url.origin!==self.location.origin) return;
 
-  if(
-    req.mode==='navigate' ||
-    url.pathname.endsWith('/version.json') ||
-    url.pathname.endsWith('/index.html')
-  ){
+  // Always ask the network for navigations and version.json so releases are seen.
+  if(req.mode==='navigate' || url.pathname.endsWith('/version.json') || url.pathname.endsWith('/index.html')){
     event.respondWith(
       fetch(new Request(req,{cache:'no-store'}))
         .then(res=>{
           if(req.mode==='navigate' || url.pathname.endsWith('/index.html')){
             const copy=res.clone();
-            caches.open(CACHE)
-              .then(c=>c.put('./index.html',copy))
-              .catch(()=>{});
+            caches.open(CACHE).then(c=>c.put('./index.html',copy)).catch(()=>{});
           }
           return res;
         })
@@ -47,16 +38,9 @@ self.addEventListener('fetch',event=>{
   }
 
   event.respondWith(
-    caches.match(req).then(cached=>{
-      if(cached) return cached;
-      return fetch(req).then(res=>{
-        if(res.ok){
-          caches.open(CACHE)
-            .then(c=>c.put(req,res.clone()))
-            .catch(()=>{});
-        }
-        return res;
-      });
-    })
+    caches.match(req).then(cached=>cached||fetch(req).then(res=>{
+      if(res.ok) caches.open(CACHE).then(c=>c.put(req,res.clone())).catch(()=>{});
+      return res;
+    }))
   );
 });
