@@ -101,19 +101,36 @@ body.live-mode #livePanel{display:grid!important;}
 
 
 <style id="autoUpdateStyle">
-#updateBadge{position:fixed;right:18px;bottom:18px;z-index:999999;background:rgba(255,255,255,.96);border:2px solid #69afe0;border-radius:14px;padding:10px 14px;box-shadow:0 8px 30px rgba(0,0,0,.18);font-weight:800;color:#245879;display:none;align-items:center;gap:10px;font-family:Arial,sans-serif}
+#updateBadge{position:fixed;right:18px;bottom:18px;z-index:999999;background:rgba(255,255,255,.97);border:2px solid #69afe0;border-radius:14px;padding:10px 14px;box-shadow:0 8px 30px rgba(0,0,0,.18);font-weight:800;color:#245879;display:none;align-items:center;gap:10px;font-family:Arial,sans-serif}
 #updateBadge button{border:0;border-radius:9px;padding:8px 12px;background:#69afe0;color:white;font-weight:800;cursor:pointer}
 </style>
 <script>
-const TODO_EN_UNO_APP_VERSION='61';
+const TODO_EN_UNO_APP_VERSION='62';
 const TODO_EN_UNO_UPDATE_MANIFEST='version.json';
-window.addEventListener('DOMContentLoaded',()=>{
-  const b=document.createElement('div'); b.id='updateBadge'; b.innerHTML='<span>✨ Nueva actualización disponible</span><button id="updateNow">ACTUALIZAR</button>'; document.body.appendChild(b);
-  document.getElementById('updateNow').onclick=async()=>{
-    try{ if(window.todoUpdateRegistration){ await window.todoUpdateRegistration.update(); } }catch(e){}
-    location.reload();
-  };
-});
+let todoUpdatePending=false;
+let todoReloadTimer=null;
+
+function todoCanAutoReload(){
+  const a=document.activeElement;
+  const typing=a && (a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable);
+  return !typing && document.visibilityState==='visible';
+}
+function todoShowUpdate(){
+  todoUpdatePending=true;
+  const b=document.getElementById('updateBadge');
+  if(b) b.style.display='flex';
+  if(todoCanAutoReload()) todoScheduleReload();
+}
+function todoScheduleReload(){
+  if(!todoUpdatePending || todoReloadTimer) return;
+  todoReloadTimer=setTimeout(()=>{
+    todoReloadTimer=null;
+    if(todoCanAutoReload()){
+      // Give the browser/service worker a moment to activate the new release.
+      location.reload();
+    }
+  },3000);
+}
 async function todoCheckForUpdate(){
   try{
     if(location.protocol==='file:') return;
@@ -121,16 +138,41 @@ async function todoCheckForUpdate(){
     if(!r.ok) return;
     const m=await r.json();
     if(String(m.version)!==String(TODO_EN_UNO_APP_VERSION)){
-      const b=document.getElementById('updateBadge'); if(b) b.style.display='flex';
-      if(window.todoUpdateRegistration){ try{ await window.todoUpdateRegistration.update(); }catch(e){} }
+      todoShowUpdate();
+      if(window.todoUpdateRegistration){
+        try{ await window.todoUpdateRegistration.update(); }catch(e){}
+      }
     }
   }catch(e){}
 }
+window.addEventListener('DOMContentLoaded',()=>{
+  const b=document.createElement('div');
+  b.id='updateBadge';
+  b.innerHTML='<span>✨ Nueva actualización disponible</span><button id="updateNow">ACTUALIZAR</button>';
+  document.body.appendChild(b);
+  document.getElementById('updateNow').onclick=()=>location.reload();
+  document.addEventListener('focusout',()=>{ if(todoUpdatePending) todoScheduleReload(); });
+  document.addEventListener('visibilitychange',()=>{ if(todoUpdatePending) todoScheduleReload(); });
+});
 if('serviceWorker' in navigator && location.protocol!=='file:'){
- window.addEventListener('load',async()=>{
-   try{ const reg=await navigator.serviceWorker.register('sw.js'); window.todoUpdateRegistration=reg; reg.addEventListener('updatefound',()=>{ const nw=reg.installing; if(nw) nw.addEventListener('statechange',()=>{ if(nw.state==='installed' && navigator.serviceWorker.controller){ const b=document.getElementById('updateBadge'); if(b) b.style.display='flex'; }}); }); todoCheckForUpdate(); setInterval(todoCheckForUpdate,60000); }catch(e){}
- });
-}else{ window.addEventListener('load',()=>{}); }
+  window.addEventListener('load',async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});
+      window.todoUpdateRegistration=reg;
+      reg.update();
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;
+        if(nw) nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed' && navigator.serviceWorker.controller){
+            todoShowUpdate();
+          }
+        });
+      });
+      await todoCheckForUpdate();
+      setInterval(todoCheckForUpdate,60000);
+    }catch(e){}
+  });
+}
 </script>
 </head>
 <body>
