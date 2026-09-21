@@ -1375,15 +1375,9 @@ body.live-mode #livePanel .live-rows{height:calc(100% - 42px)!important;min-heig
     <div class="pro-brand-sub">Tu negocio en un solo lugar</div>
   </div>
   <nav class="pro-nav">
-    <button class="pro-nav-btn active" data-action="caja"><span>⌂</span>Inicio</button>
     <button class="pro-nav-btn" data-action="historial"><span>▣</span>Historial Local</button>
     <button class="pro-nav-btn" id="liveHistoryBtn"><span>◉</span>Historial En Vivo</button>
     <button class="pro-nav-btn" data-action="actual"><span>▣</span>Día Actual</button>
-    <button class="pro-nav-btn" data-action="productos"><span>◇</span>Productos</button>
-    <button class="pro-nav-btn" data-action="gastos"><span>▰</span>Gastos</button>
-    <button class="pro-nav-btn" data-action="estadisticas"><span>▥</span>Estadísticas</button>
-    <button class="pro-nav-btn" data-action="juegos"><span>♧</span>Juegos</button>
-    <button class="pro-nav-btn" data-action="config"><span>⚙</span>Configuración</button>
     <button class="pro-nav-btn" data-action="acerca"><span>ⓘ</span>Acerca de</button>
   </nav>
   <div class="pro-left-controls" aria-label="Controles de caja">
@@ -1429,8 +1423,7 @@ body.live-mode #livePanel .live-rows{height:calc(100% - 42px)!important;min-heig
     <button class="historyBtn" id="historyBtn">📋 HISTORIAL</button>
     <button class="next" id="todayBtn">📅 <span>DÍA ACTUAL</span></button>
     <button class="next" id="backBtn" style="display:none">↩ VOLVER AL DÍA ACTUAL</button>
-    <button class="close" id="saveEditBtn" style="display:none">💾 GUARDAR CAMBIOS</button>
-    <button class="settingsBtn" id="settingsBtn" title="Editar configuración">⚙️</button>
+    
   </div>
 </div>
 <div class="sheet">
@@ -1451,7 +1444,7 @@ body.live-mode #livePanel .live-rows{height:calc(100% - 42px)!important;min-heig
   <div class="total" id="total">TOTAL: $ 0</div>
   <div class="pending" id="pending">PENDIENTE: $ 0</div>
   <div class="status" id="status">🟢 DÍA ABIERTO</div>
-  <div class="status" id="modeStatus" style="display:none">✏️ EDITANDO HISTORIAL</div>
+  
 </div>
 
 <div class="history" id="historyBox">
@@ -1508,20 +1501,27 @@ body.live-mode #livePanel .live-rows{height:calc(100% - 42px)!important;min-heig
     <div class="pro-mini-title">📅 Calendario</div>
     <div id="proCalendar" class="pro-calendar"></div>
   </div>
-  <div class="pro-mini-card">
-    <div class="pro-mini-title">⚡ Accesos rápidos</div>
-    <div class="pro-quick">
-      <button class="q-green" data-quick="nuevo">＋&nbsp; Nuevo registro</button>
-      <button class="q-blue" data-quick="historial">◷&nbsp; Ver historial</button>
-      <button class="q-purple" data-quick="actual">▣&nbsp; Día actual</button>
-      <button class="q-orange" data-quick="calc">▦&nbsp; Calculadora</button>
-      
+  <div class="pro-mini-card calculator-card-only">
+    <div id="webCalc" aria-label="Calculadora">
+      <div class="wc-head"><div class="wc-title"><span class="wc-title-icon">▦</span><span>Calculadora</span></div><span>—</span></div>
+      <div class="wc-display" id="wcDisplay">0</div>
+      <div class="wc-memory">
+        <button type="button" data-m="MC">MC</button><button type="button" data-m="MR">MR</button><button type="button" data-m="M+">M+</button><button type="button" data-m="M-">M−</button><button type="button" data-m="MS">MS</button><button type="button" data-m="M">M⌄</button>
+      </div>
+      <div class="wc-grid">
+        <button type="button" data-k="%">%</button><button type="button" data-k="CE">CE</button><button type="button" data-k="C">C</button><button type="button" data-k="BACK">⌫</button>
+        <button type="button" data-k="1/x">1/x</button><button type="button" data-k="x2">x²</button><button type="button" data-k="sqrt">²√x</button><button type="button" data-k="/">÷</button>
+        <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button><button type="button" class="wc-op" data-k="*">×</button>
+        <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button><button type="button" class="wc-op" data-k="-">−</button>
+        <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button><button type="button" class="wc-op" data-k="+">+</button>
+        <button type="button" data-k="sign">+/−</button><button type="button" data-k="0">0</button><button type="button" data-k=".">,</button><button type="button" class="wc-eq" data-k="=">=</button>
+      </div>
     </div>
   </div>
 </div>
 </div>
 
-<div class="pro-footer"><span>◉ <b>TODO EN UNO</b> &nbsp; v94.0</span><span>☁ Tu herramienta, siempre actualizada</span><span class="pro-online">● Sistema en línea &nbsp;⌁</span></div>
+<div class="pro-footer"><span>◉ <b>TODO EN UNO</b> &nbsp; v96.0</span><span>☁ Tu herramienta, siempre actualizada</span><span class="pro-online">● Sistema en línea &nbsp;⌁</span></div>
 
 <div class="design-modal" id="designModal">
  <div class="design-card">
@@ -1537,22 +1537,8 @@ body.live-mode #livePanel .live-rows{height:calc(100% - 42px)!important;min-heig
   <div class="design-help">💡 <b>Editar directamente:</b> después de cerrar esta ventana podés agarrar cualquier cuadro o botón y moverlo. El cuadradito naranja de la esquina permite cambiar su tamaño. Volvé a ⚙️ cuando quieras guardar o restaurar el diseño.</div>
  </div>
 </div>
-<div class="design-toolbar" id="designToolbar"><strong>🎨 DISEÑO</strong><span id="designToolbarName"></span><button class="save" id="designToolbarSave">💾 GUARDAR</button><button class="exit" id="designToolbarExit">✕ SALIR</button></div>
-<div class="settings-modal" id="settingsModal" style="display:none">
-  <div class="settings-card">
-    <div class="settings-head"><h2>⚙️ PERSONALIZAR TODO EN UNO</h2><button id="settingsClose">✕</button></div>
-    <div class="settings-grid">
-      <label>Nombre de la web<input id="setTitle" type="text"></label>
-      <label>Botón LOCAL<input id="setLocal" type="text"></label>
-      <label>Botón EN VIVO<input id="setLive" type="text"></label>
-      <label>Columna 1 (LOCAL)<input id="setCol1" type="text"></label>
-      <label>Columna 2 (LOCAL)<input id="setCol2" type="text"></label>
-      <label>Columna 3 (LOCAL)<input id="setCol3" type="text"></label>
-    </div>
-    <div class="settings-checks"><label><input id="setGames" type="checkbox"> Mostrar Tetris y Preguntas</label></div>
-    <div class="settings-actions"><button id="settingsReset">↺ Restaurar</button><button id="settingsSave">💾 Guardar cambios</button></div>
-  </div>
-</div>
+
+
 
 <style id="settings-v51">
 .settingsBtn{border:0;background:#fff;font-size:22px;width:42px;height:42px;border-radius:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);margin:4px;vertical-align:middle}.settingsBtn:hover{transform:rotate(20deg)}
@@ -1857,17 +1843,15 @@ $("localModeBtn").onclick=()=>setMode("local");
 $("liveModeBtn").onclick=()=>setMode("live");
 $("liveClearBtn").onclick=()=>{if(!data.live.some(x=>String(x).trim()))return;if(confirm("¿Limpiar todos los importes de EN VIVO?")){data.live=Array.from({length:50},()=>"");save();renderLive();}};
 $("liveTopClearBtn").onclick=()=>$("liveClearBtn").click();
-$("settingsBtn").onclick=openSettings;$("settingsClose").onclick=closeSettings;$("settingsModal").addEventListener("click",e=>{if(e.target.id==="settingsModal")closeSettings();});
-$("settingsReset").onclick=()=>{data.settings=Object.assign({},DEFAULT_SETTINGS);applySettings();save();openSettings();};
-$("settingsSave").onclick=()=>{data.settings={title:$("setTitle").value.trim()||DEFAULT_SETTINGS.title,local:$("setLocal").value.trim()||DEFAULT_SETTINGS.local,live:$("setLive").value.trim()||DEFAULT_SETTINGS.live,col1:$("setCol1").value.trim()||DEFAULT_SETTINGS.col1,col2:$("setCol2").value.trim()||DEFAULT_SETTINGS.col2,col3:$("setCol3").value.trim()||DEFAULT_SETTINGS.col3,games:$("setGames").checked};save();applySettings();closeSettings();};
+/* V105: configuración eliminada. No se registran handlers de configuración. */
 function draw(){
  const item=active();
  const d=new Date(item.date+"T12:00:00");
  $("date").textContent=d.toLocaleDateString("es-AR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
- $("modeStatus").style.display=editingDate?"block":"none";
- $("backBtn").style.display=editingDate?"inline-block":"none";
- $("saveEditBtn").style.display=editingDate?"inline-block":"none";
- $("closeBtn").style.display=editingDate?"none":"inline-block";
+ const modeStatusEl=$("modeStatus"); if(modeStatusEl) modeStatusEl.style.display=editingDate?"block":"none";
+ const backBtnEl=$("backBtn"); if(backBtnEl) backBtnEl.style.display=editingDate?"inline-block":"none";
+ const saveEditBtnEl=$("saveEditBtn"); if(saveEditBtnEl) saveEditBtnEl.style.display=editingDate?"inline-block":"none";
+ const closeBtnEl=$("closeBtn"); if(closeBtnEl) closeBtnEl.style.display=editingDate?"none":"inline-block";
  const rows=$("rows"); rows.innerHTML="";
  for(let i=0;i<COUNT;i++){
    const r=document.createElement("div");r.className="data-row";
@@ -1909,7 +1893,13 @@ function draw(){
 }
 function calc(){
  const item=active(); let t=0,p=0;item.rows.forEach(r=>{t+=number(r.p);p+=number(r.d)});
- $("total").textContent="TOTAL: "+format(t); $("pending").textContent="PENDIENTE: "+format(p);
+ const totalEl=$("total"), pendingEl=$("pending");
+ if(totalEl) totalEl.textContent="TOTAL: "+format(t);
+ if(pendingEl) pendingEl.textContent="PENDIENTE: "+format(p);
+ if($("proTotal")) $("proTotal").textContent=format(t);
+ if($("proPending")) $("proPending").textContent=format(p);
+ if($("proRecords")) $("proRecords").textContent=item.rows.filter(r=>String(r.p||r.t||r.d||"").trim()!=="").length;
+ if($("proDayStatus")) $("proDayStatus").textContent=data.current.closed?"Cerrado 🔴":"Abierto 🟢";
 }
 function recalcHistory(h){let t=0,p=0;h.rows.forEach(r=>{t+=number(r.p);p+=number(r.d)});h.total=t;h.pending=p}
 $("closeBtn").onclick=()=>{
@@ -1949,11 +1939,7 @@ $("closeBtn").onclick=()=>{
 };
 $("nextBtn").onclick=()=>{};
 $("backBtn").onclick=()=>{editingDate=null;draw();$("scrollBox").scrollTop=0;setTimeout(()=>document.querySelector("#rows input")?.focus(),50)};
-$("saveEditBtn").onclick=()=>{
- if(!editingDate)return;
- const h=data.history.find(x=>x.date===editingDate); if(!h)return;
- recalcHistory(h); save(); renderHistory(); alert("Cambios guardados en el historial.");
-};
+/* V106: editor/configuración eliminados; no se registra saveEditBtn. */
 function renderHistory(){
  const groups={};
  [...data.history].sort((a,b)=>b.date.localeCompare(a.date)).forEach(x=>{
@@ -2164,7 +2150,7 @@ setMode("local");
  function next(){if(idx<9){idx++;show()}else finish()}
  function finish(){game.style.display='none';result.style.display='block';document.getElementById('quizFinalScore').textContent=score+' puntos';let text=score>=1000?'🏆 ¡Excelente! Sos una máquina.':score>=750?'🔥 ¡Muy bien! Tenés buen nivel.':score>=500?'👏 ¡Bien jugado! A seguir practicando.':'💪 ¡Buen intento! La próxima sale mejor.';document.getElementById('quizFinalText').textContent=text}
  document.getElementById('quizStartBtn').onclick=start;document.getElementById('quizNextBtn').onclick=next;document.getElementById('quizAgainBtn').onclick=start;document.getElementById('quizExitBtn').onclick=()=>{game.style.display='none';setup.style.display='block'};document.getElementById('quizCloseBtn').onclick=()=>panel.style.display='none';
-applySettings();
+/* V107: configuración eliminada; no inicializar applySettings(). */
 })();
 </script>
 
@@ -2258,7 +2244,7 @@ body{overflow-x:hidden;}
   const KEY='TODO_EN_UNO_LAYOUT_V60';
   const TARGETS=[
     ['app','📦 Caja completa'],['brand','🖼️ Logo y título'],
-    ['closeBtn','🔒 Cerrar día'],['nextBtn','▶ Día siguiente'],['historyBtn','📋 Historial'],['todayBtn','📅 Día actual'],['backBtn','↩ Volver'],['saveEditBtn','💾 Guardar cambios'],['settingsBtn','⚙️ Ruedita'],
+    ['closeBtn','🔒 Cerrar día'],['nextBtn','▶ Día siguiente'],['historyBtn','📋 Historial'],['todayBtn','📅 Día actual'],['backBtn','↩ Volver'],['saveEditBtn','💾 Guardar cambios'],
     ['localModeBtn','🏪 Botón LOCAL'],['liveModeBtn','🔴 Botón EN VIVO'],['sheet','📋 Cuadro LOCAL'],['bottom','💰 Totales inferiores'],['historyBox','📚 Cuadro HISTORIAL'],['livePanel','🔴 Cuadro EN VIVO'],['liveTotal-card','💵 Total EN VIVO'],
     ['game-buttons','🎮 Botones de juegos'],['tetrisBtn','🎮 Botón Tetris'],['tetrisPanel','🎮 Cuadro Tetris'],['quizBtn','🧠 Botón Preguntas'],['quizPanel','🧠 Cuadro Preguntas']
   ];
@@ -2279,7 +2265,7 @@ body{overflow-x:hidden;}
   const modal=$('designModal'),toolbar=$('designToolbar');
   // Hide the old numeric editor: this version is 100% mouse/touch based.
   if(modal) modal.innerHTML='<div class="design-modal-card"><h2>🎨 Editor visual</h2><p>Hacé clic y mantené apretado sobre un botón o cuadro para moverlo.</p><p>Al seleccionarlo queda marcado. Usá el <b>cuadradito de la esquina inferior derecha</b> para agrandarlo o achicarlo.</p><div class="design-help">🖱️ Arrastrar = mover &nbsp;&nbsp; 🟧 Esquina = cambiar tamaño</div><div class="design-modal-actions"><button id="designStartDrag" class="primary">🎨 EMPEZAR A MOVER</button><button id="designResetAll">↺ RESTAURAR TODO</button><button id="designClose">✕ CERRAR</button></div></div>';
-  if(toolbar) toolbar.innerHTML='<strong>🎨 DISEÑO</strong><span id="designToolbarName">Elegí un elemento</span><button class="save" id="designToolbarSave">💾 GUARDAR</button><button class="exit" id="designToolbarExit">✕ SALIR</button>';
+  if(toolbar) toolbar.innerHTML='<strong>🎨 DISEÑO</strong><span id="designToolbarName">Elegí un elemento</span>';
 
   const handle=document.createElement('div');handle.className='design-resize-handle-v60';handle.innerHTML='<span></span><span></span><span></span>';document.body.appendChild(handle);
   let activeKey=null,drag=null,resizing=null;
@@ -3094,5 +3080,273 @@ body.live-mode #livePanel .v82-live-total-top .live-clear{display:block!importan
 })();
 </script>
 
+
+<style id="v98-calculator-css">
+.calculator-card-only{padding:8px!important;overflow:hidden!important;background:#202020!important;border:1px solid #444!important;border-radius:12px!important;box-shadow:0 8px 22px rgba(0,0,0,.18)!important}
+.calculator-card-only>.pro-mini-title{display:none!important}
+#webCalc{width:100%!important;box-sizing:border-box!important;color:#fff!important;font-family:Arial,sans-serif!important}
+#webCalc .wc-head{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 5px;color:#f5f5f5;font-size:15px;font-weight:700}
+#webCalc .wc-title{display:flex;align-items:center;gap:7px}
+#webCalc .wc-title-icon{font-size:18px}
+#webCalc .wc-display{height:68px;display:flex;align-items:center;justify-content:flex-end;box-sizing:border-box;padding:5px 10px;margin:3px 0 6px;background:#202020;border:2px solid #ddd;border-radius:6px;color:#fff;font-size:34px;font-weight:500;overflow:hidden;white-space:nowrap}
+#webCalc .wc-memory{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-bottom:4px}
+#webCalc .wc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+#webCalc button{min-width:0;height:45px;padding:0!important;border:0!important;border-radius:4px!important;background:#3b3b3b!important;color:#f5f5f5!important;font-size:16px!important;font-weight:500!important;cursor:pointer!important}
+#webCalc .wc-memory button{height:28px!important;background:#242424!important;color:#ccc!important;font-size:11px!important}
+#webCalc button:hover{background:#4b4b4b!important}
+#webCalc .wc-eq{background:#45b9f2!important;color:#111!important;font-weight:700!important}
+#webCalc .wc-eq:hover{background:#63c7f5!important}
+@media(max-width:1100px){#webCalc .wc-display{height:60px;font-size:29px}#webCalc button{height:40px!important;font-size:14px!important}#webCalc .wc-memory button{height:25px!important;font-size:10px!important}}
+</style>
+
+<script id="v98-calculator-js">
+(function(){
+  function start(){
+    const d=document.getElementById('wcDisplay'); if(!d) return;
+    let expr='', mem=0, result=false;
+    const show=()=>{d.textContent=expr?expr.replace(/\*/g,'×').replace(/\//g,'÷'):'0'};
+    const num=()=>{const m=expr.match(/(?:^|[+\-*/])(-?(?:\d+(?:\.\d*)?|\.\d+))$/);return m?parseFloat(m[1]):0};
+    const calc=()=>{try{if(!expr)return; if(!/^[0-9+\-*/().\s]+$/.test(expr))throw 0; const n=Function('"use strict";return ('+expr+')')(); if(!Number.isFinite(n))throw 0; expr=String(n);result=true;d.textContent=Number(n).toLocaleString('es-AR',{maximumFractionDigits:10})}catch(e){d.textContent='Error';expr='';result=true}};
+    document.querySelectorAll('#webCalc [data-k]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k; if(/^\d$/.test(k)||k==='.'){if(result){expr='';result=false}expr+=k;show();return} if(['+','-','*','/'].includes(k)){result=false;if(/[+\-*/]$/.test(expr))expr=expr.slice(0,-1);expr+=k;show();return} if(k==='='){calc();return} if(k==='C'){expr='';result=false;show();return} if(k==='CE'){const m=expr.match(/(.*?)(-?(?:\d+(?:\.\d*)?|\.\d+))$/);expr=m?expr.slice(0,expr.length-m[2].length):'';show();return} if(k==='BACK'){expr=expr.slice(0,-1);show();return} if(k==='sign'){const m=expr.match(/(.*?)(-?(?:\d+(?:\.\d*)?|\.\d+))$/);if(m){const x=m[2];expr=expr.slice(0,expr.length-x.length)+(x.startsWith('-')?x.slice(1):'-'+x);show()}return} if(k==='1/x'){const n=num();expr=String(1/n);result=true;d.textContent=Number(1/n).toLocaleString('es-AR');return} if(k==='x2'){const n=num();expr=String(n*n);result=true;d.textContent=Number(n*n).toLocaleString('es-AR');return} if(k==='sqrt'){const n=num();expr=String(Math.sqrt(n));result=true;d.textContent=Number(Math.sqrt(n)).toLocaleString('es-AR');return} if(k==='%'){const n=num();expr=String(n/100);result=true;d.textContent=Number(n/100).toLocaleString('es-AR')}}));
+    document.querySelectorAll('#webCalc [data-m]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.m,n=num();if(k==='MC')mem=0;else if(k==='MR'){expr=String(mem);result=true;show()}else if(k==='MS')mem=n;else if(k==='M+')mem+=n;else if(k==='M-')mem-=n}));
+    document.addEventListener('keydown',e=>{if(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;if(/^\d$/.test(e.key)||['+','-','*','/','.'].includes(e.key)){if(/^\d$|\.$/.test(e.key)&&result){expr='';result=false}expr+=e.key;show()}else if(e.key==='Enter'||e.key==='=')calc();else if(e.key==='Backspace'){expr=expr.slice(0,-1);show()}else if(e.key==='Escape'){expr='';result=false;show()}});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+</script>
+\n<style id="v99-fix-css">
+/* V99 — calculadora celeste/blanca + edición de historial funcional */
+.calculator-card-only{background:#ffffff!important;border:1px solid #b9dff1!important;box-shadow:0 6px 18px rgba(38,112,150,.12)!important;padding:8px!important}
+#webCalc{background:#ffffff!important;color:#111!important;border:0!important;box-shadow:none!important}
+#webCalc .wc-head{color:#111!important;background:#eaf7fd!important;border-radius:7px 7px 0 0!important;padding:0 8px!important}
+#webCalc .wc-title{color:#111!important}
+#webCalc .wc-display{background:#fff!important;color:#111!important;border:2px solid #67b7e8!important;box-shadow:inset 0 1px 3px rgba(0,0,0,.06)!important}
+#webCalc .wc-memory button{background:#e9f7fd!important;color:#111!important;border:1px solid #c6e5f2!important}
+#webCalc button{background:#e8f6fc!important;color:#111!important;border:1px solid #b8ddec!important;font-weight:700!important}
+#webCalc button:hover{background:#cfeef9!important}
+#webCalc .wc-op{background:#d9f0fa!important;color:#111!important}
+#webCalc .wc-eq{background:#67b7e8!important;color:#111!important;border-color:#67b7e8!important}
+#webCalc .wc-eq:hover{background:#4fa9dc!important}
+/* Cuando se edita un día, los controles deben quedar siempre accesibles */
+#saveEditBtn,#backBtn{position:relative!important;z-index:100000!important;pointer-events:auto!important}
+#saveEditBtn{background:#67b7e8!important;color:#fff!important}
+#backBtn{background:#eef8fc!important;color:#24546c!important;border:1px solid #b8ddec!important}
+body.history-editing #saveEditBtn,body.history-editing #backBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;pointer-events:auto!important}
+.design-toolbar,.design-toolbar *{pointer-events:auto!important}
+</style>
+<script id="v99-fix-js">
+(function(){
+  function fixHistoryEditing(){
+    const saveBtn=document.getElementById('saveEditBtn');
+    const backBtn=document.getElementById('backBtn');
+    if(!saveBtn || !backBtn) return;
+    // Reemplazamos los handlers para que GUARDAR también salga del modo edición.
+    saveBtn.onclick=function(e){
+      e.preventDefault(); e.stopPropagation();
+      if(!window.editingDate && typeof editingDate==='undefined') return;
+      try{
+        const date=(typeof editingDate!=='undefined')?editingDate:null;
+        if(!date) return;
+        const h=(typeof data!=='undefined' && Array.isArray(data.history))?data.history.find(x=>x.date===date):null;
+        if(!h) return;
+        if(typeof recalcHistory==='function') recalcHistory(h);
+        if(typeof save==='function') save();
+        if(typeof renderHistory==='function') renderHistory();
+        // Salir del día editado después de guardar.
+        if(typeof editingDate!=='undefined') editingDate=null;
+        document.body.classList.remove('history-editing');
+        if(typeof draw==='function') draw();
+        if(typeof renderLive==='function') renderLive();
+        if(typeof renderLiveHistory==='function') renderLiveHistory();
+        if(typeof setMode==='function') setMode('local');
+        saveBtn.style.display='none';
+        backBtn.style.display='none';
+        const closeBtn=document.getElementById('closeBtn'); if(closeBtn) closeBtn.style.display='inline-flex';
+        const status=document.getElementById('modeStatus'); if(status) status.style.display='none';
+        alert('Cambios guardados correctamente.');
+      }catch(err){console.error(err);alert('No se pudieron guardar los cambios.');}
+    };
+    backBtn.onclick=function(e){
+      e.preventDefault(); e.stopPropagation();
+      try{
+        if(typeof editingDate!=='undefined') editingDate=null;
+        document.body.classList.remove('history-editing');
+        if(typeof draw==='function') draw();
+        if(typeof renderHistory==='function') renderHistory();
+        if(typeof renderLive==='function') renderLive();
+        if(typeof setMode==='function') setMode('local');
+        saveBtn.style.display='none'; backBtn.style.display='none';
+        const closeBtn=document.getElementById('closeBtn'); if(closeBtn) closeBtn.style.display='inline-flex';
+        const status=document.getElementById('modeStatus'); if(status) status.style.display='none';
+      }catch(err){console.error(err);}
+    };
+  }
+  function watchEdit(){
+    fixHistoryEditing();
+    const saveBtn=document.getElementById('saveEditBtn');
+    const backBtn=document.getElementById('backBtn');
+    if(saveBtn && backBtn){
+      const obs=new MutationObserver(()=>{
+        const editing=saveBtn.style.display!=='none' || backBtn.style.display!=='none';
+        document.body.classList.toggle('history-editing',editing);
+      });
+      obs.observe(saveBtn,{attributes:true,attributeFilter:['style']});
+      obs.observe(backBtn,{attributes:true,attributeFilter:['style']});
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',watchEdit); else watchEdit();
+  setTimeout(watchEdit,500);
+})();
+</script>
+
+
+<style id="v101-save-exit">
+/* Al guardar cambios se sale automáticamente del modo edición. */
+#saveEditBtn{
+  position:relative!important;
+  z-index:99999!important;
+  pointer-events:auto!important;
+}
+</style>
+<script id="v101-save-exit-js">
+(function(){
+  function hookSave(){
+    const btn=document.getElementById('saveEditBtn');
+    if(!btn || btn.dataset.v101Hooked) return;
+    btn.dataset.v101Hooked='1';
+
+    btn.addEventListener('click', function(){
+      /*
+       * Dejamos que el manejador original guarde primero.
+       * Después cerramos automáticamente el modo edición, sin
+       * obligar al usuario a pulsar "Salir" por separado.
+       */
+      setTimeout(function(){
+        // Intentar las funciones de cierre existentes de la aplicación.
+        if(typeof window.exitEditMode === 'function'){
+          window.exitEditMode();
+          return;
+        }
+        if(typeof window.closeEditMode === 'function'){
+          window.closeEditMode();
+          return;
+        }
+
+        // Compatibilidad con las implementaciones anteriores:
+        const editPanel =
+          document.getElementById('editPanel') ||
+          document.querySelector('.edit-panel');
+
+        if(editPanel){
+          editPanel.style.display='none';
+        }
+
+        document.body.classList.remove('editing','edit-mode');
+
+        const modeStatus=document.getElementById('modeStatus');
+        if(modeStatus) modeStatus.style.display='none';
+
+        const saveEditBtn=document.getElementById('saveEditBtn');
+        if(saveEditBtn) saveEditBtn.style.display='none';
+
+        const editBtn=document.getElementById('editBtn');
+        if(editBtn) editBtn.style.display='';
+
+        // Quitar selección visual de elementos editables.
+        document.querySelectorAll('.design-selected,.editor-selected,.drag-selected')
+          .forEach(el=>el.classList.remove('design-selected','editor-selected','drag-selected'));
+      },120);
+    }, true);
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',hookSave);
+  }else{
+    hookSave();
+  }
+  setInterval(hookSave,500);
+})();
+</script>
+
+
+<style id="v102-design-save-exit">
+/* V102: GUARDAR en el editor de diseño guarda y cierra automáticamente. */
+#designToolbarSave,#settingsSave{pointer-events:auto!important;z-index:100001!important;}
+</style>
+<script id="v102-design-save-exit-js">
+(function(){
+  function hook(){
+    const b=document.getElementById("designToolbarSave");
+    const e=document.getElementById("designToolbarExit");
+    if(b && e && !b.dataset.v102){
+      b.dataset.v102="1";
+      b.addEventListener("click",function(){
+        setTimeout(function(){
+          try{ if(e && e.style.display !== "none") e.click(); }catch(_){}
+        },80);
+      });
+    }
+    const sb=document.getElementById("settingsSave");
+    if(sb && !sb.dataset.v102){
+      sb.dataset.v102="1";
+      sb.addEventListener("click",function(){
+        setTimeout(function(){
+          const modal=document.getElementById("settingsModal");
+          if(modal) modal.style.display="none";
+        },80);
+      });
+    }
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded",hook); else hook();
+  setInterval(hook,500);
+})();
+</script>
+<style id="v103-no-config">
+#settingsBtn,.settingsBtn,#settingsModal,.settings-modal,#designToolbar,.design-toolbar,#editBtn,#saveEditBtn,#modeStatus{display:none!important;}
+</style>
+
+<script id="v108-local-row-fallback">
+(function(){
+  // Respaldo independiente: si alguna función antigua se detiene, LOCAL igual debe dibujar sus 50 filas.
+  function start(){
+    const rows=document.getElementById('rows');
+    if(!rows) return;
+    if(rows.querySelectorAll('.data-row').length>=50) return;
+    const KEY='TODO_EN_UNO_V11', COUNT=50;
+    const blank=()=>Array.from({length:COUNT},()=>({p:'',t:'',d:''}));
+    let data;
+    try{data=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){data=null}
+    if(!data || !data.current){
+      data={current:{date:new Date().toISOString().slice(0,10),closed:false,rows:blank()},history:[],live:Array(50).fill(''),liveHistory:[]};
+    }
+    if(!Array.isArray(data.current.rows)||data.current.rows.length!==COUNT) data.current.rows=blank();
+    const num=v=>{let x=String(v||'').replace(/\s/g,'').replace(/\$/g,''); if(x.includes(',')&&x.includes('.')){if(x.lastIndexOf(',')>x.lastIndexOf('.')) x=x.replace(/\./g,'').replace(',','.');else x=x.replace(/,/g,'');}else if(x.includes(',')){const p=x.split(',');x=p.length>1&&p[p.length-1].length===3?p.join(''):x.replace(',','.')}else if(x.includes('.')){const p=x.split('.');x=p.length>1&&p[p.length-1].length===3?p.join(''):x} const n=parseFloat(x);return isFinite(n)?n:0};
+    const money=n=>'$ '+Math.round(n||0).toLocaleString('es-AR');
+    const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}};
+    rows.innerHTML='';
+    for(let i=0;i<COUNT;i++){
+      const r=document.createElement('div'); r.className='data-row';
+      r.innerHTML='<div class="cell number">'+(i+1)+'</div><div class="cell money"><input type="text" inputmode="decimal" placeholder="0"></div><div class="cell"><input type="text" placeholder="Detalle"></div><div class="cell money"><input type="text" inputmode="decimal" placeholder="0"></div>';
+      const ins=r.querySelectorAll('input'), item=data.current.rows[i]||{};
+      ins[0].value=item.p||''; ins[1].value=item.t||''; ins[2].value=item.d||'';
+      ins.forEach((el,k)=>el.addEventListener('input',()=>{
+        data.current.rows[i][k===0?'p':k===1?'t':'d']=el.value;
+        save();
+        let total=0,pending=0,count=0; data.current.rows.forEach(x=>{total+=num(x.p);pending+=num(x.d);if(String(x.p||x.t||x.d||'').trim())count++});
+        const a=document.getElementById('total'),b=document.getElementById('pending'),c=document.getElementById('proTotal'),d=document.getElementById('proPending'),e=document.getElementById('proRecords');
+        if(a)a.textContent='TOTAL: '+money(total); if(b)b.textContent='PENDIENTE: '+money(pending); if(c)c.textContent=money(total); if(d)d.textContent=money(pending); if(e)e.textContent=count;
+      }));
+      rows.appendChild(r);
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
+})();
+</script>
 </body>
 </html>
+<style id="v96-clean-menu">
+.pro-nav-btn[data-action="caja"],.pro-nav-btn[data-action="productos"],.pro-nav-btn[data-action="gastos"],.pro-nav-btn[data-action="estadisticas"]{display:none!important}
+.pro-side-stack .pro-mini-card .pro-quick button:not([data-quick="calc"]){display:none!important}
+.calculator-card-only .pro-quick{display:flex!important}
+.calculator-card-only .pro-quick [data-quick="calc"]{display:block!important;width:100%!important}
+</style>
