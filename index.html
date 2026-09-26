@@ -49,6 +49,42 @@ body.history-open .history{left:auto;right:15px;top:80px;width:360px;max-width:3
   body.history-open .app{width:calc(100vw - 24px);max-width:none;margin:12px;}
   body.history-open .history{left:10px;right:10px;width:auto;max-width:none;top:75px;}
 }
+
+/* V122: DEBE / FALTA editable */
+.debe-cell{pointer-events:auto!important;position:relative;z-index:2}
+.debe-input{pointer-events:auto!important;cursor:text!important;user-select:text!important;background:#fff!important;color:#222!important}
+.debe-input:focus{border:2px solid #67b7e8!important;background:#f8fcff!important}
+</style>
+
+<style id="v123-live-history-notebook-fix">
+/* Historial EN VIVO: misma posición y comportamiento que Historial Local. */
+#liveHistoryBox{
+  position:fixed!important;
+  z-index:1000!important;
+  top:80px!important;
+  right:15px!important;
+  left:auto!important;
+  width:360px!important;
+  max-width:360px!important;
+  height:calc(100vh - 120px)!important;
+  max-height:650px!important;
+  box-sizing:border-box!important;
+}
+body.history-open #liveHistoryBox{
+  right:15px!important;
+  width:360px!important;
+  max-width:360px!important;
+}
+@media(max-width:900px){
+  #liveHistoryBox{right:10px!important;width:300px!important;max-width:300px!important;}
+  body.history-open #liveHistoryBox{right:10px!important;width:300px!important;max-width:300px!important;}
+}
+@media(max-width:700px){
+  #liveHistoryBox,body.history-open #liveHistoryBox{
+    left:10px!important;right:10px!important;width:auto!important;max-width:none!important;
+    top:75px!important;height:calc(100vh - 90px)!important;
+  }
+}
 </style>
 
 <style id="live-v47-fix">
@@ -101,35 +137,55 @@ body.live-mode #livePanel{display:grid!important;}
 
 
 <style id="autoUpdateStyle">
-#updateBadge{position:fixed;right:18px;bottom:18px;z-index:999999;background:rgba(255,255,255,.97);border:2px solid #69afe0;border-radius:14px;padding:10px 14px;box-shadow:0 8px 30px rgba(0,0,0,.18);font-weight:800;color:#245879;display:none;align-items:center;gap:10px;font-family:Arial,sans-serif}
-#updateBadge button{border:0;border-radius:9px;padding:8px 12px;background:#69afe0;color:white;font-weight:800;cursor:pointer}
+/* Actualización automática: no requiere tocar ningún botón. */
+#updateBadge{display:none!important}
 </style>
 <script>
-const TODO_EN_UNO_APP_VERSION='95';
+const TODO_EN_UNO_APP_VERSION='123';
 const TODO_EN_UNO_UPDATE_MANIFEST='version.json';
 let todoUpdatePending=false;
-let todoReloadTimer=null;
+let todoReloadStarted=false;
 
-function todoCanAutoReload(){
+function todoIsTyping(){
   const a=document.activeElement;
-  const typing=a && (a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable);
-  return !typing && document.visibilityState==='visible';
+  return !!(a && (a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable));
 }
-function todoShowUpdate(){
-  todoUpdatePending=true;
-  const b=document.getElementById('updateBadge');
-  if(b) b.style.display='flex';
-  if(todoCanAutoReload()) todoScheduleReload();
+function todoReloadNow(version){
+  if(todoReloadStarted) return;
+  todoReloadStarted=true;
+  const targetVersion=encodeURIComponent(String(version||Date.now()));
+  /* Cache-buster: fuerza a GitHub Pages a pedir el index actualizado. */
+  const url=new URL(location.href);
+  url.searchParams.set('todo_version',targetVersion);
+  location.replace(url.toString());
 }
-function todoScheduleReload(){
-  if(!todoUpdatePending || todoReloadTimer) return;
-  todoReloadTimer=setTimeout(()=>{
-    todoReloadTimer=null;
-    if(todoCanAutoReload()){
-      // Give the browser/service worker a moment to activate the new release.
-      location.reload();
+function todoAutoReloadWhenSafe(version){
+  if(todoReloadStarted) return;
+  if(todoIsTyping()){
+    todoUpdatePending=true;
+    return;
+  }
+  /* Pequeña espera para que el Service Worker termine de instalarse. */
+  setTimeout(()=>{
+    if(!todoIsTyping()) todoReloadNow(version);
+    else todoUpdatePending=true;
+  },1200);
+}
+async function todoActivateNewServiceWorker(version){
+  try{
+    const reg=window.todoUpdateRegistration;
+    if(reg){
+      await reg.update();
+      const worker=reg.waiting || reg.installing;
+      if(worker){
+        try{ worker.postMessage({type:'SKIP_WAITING'}); }catch(e){}
+      }
+      if(navigator.serviceWorker){
+        const once=()=>{ navigator.serviceWorker.removeEventListener('controllerchange',once); todoReloadNow(version); };
+        navigator.serviceWorker.addEventListener('controllerchange',once);
+      }
     }
-  },3000);
+  }catch(e){}
 }
 async function todoCheckForUpdate(){
   try{
@@ -137,39 +193,38 @@ async function todoCheckForUpdate(){
     const r=await fetch(TODO_EN_UNO_UPDATE_MANIFEST+'?t='+Date.now(),{cache:'no-store'});
     if(!r.ok) return;
     const m=await r.json();
-    if(String(m.version)!==String(TODO_EN_UNO_APP_VERSION)){
-      todoShowUpdate();
-      if(window.todoUpdateRegistration){
-        try{ await window.todoUpdateRegistration.update(); }catch(e){}
-      }
+    const remote=String(m.version||'');
+    if(remote && remote!==String(TODO_EN_UNO_APP_VERSION)){
+      todoUpdatePending=true;
+      await todoActivateNewServiceWorker(remote);
+      if(!todoReloadStarted && !todoIsTyping()) todoAutoReloadWhenSafe(remote);
     }
   }catch(e){}
 }
-window.addEventListener('DOMContentLoaded',()=>{
-  const b=document.createElement('div');
-  b.id='updateBadge';
-  b.innerHTML='<span>✨ Nueva actualización disponible</span><button id="updateNow">ACTUALIZAR</button>';
-  document.body.appendChild(b);
-  document.getElementById('updateNow').onclick=()=>location.reload();
-  document.addEventListener('focusout',()=>{ if(todoUpdatePending) todoScheduleReload(); });
-  document.addEventListener('visibilitychange',()=>{ if(todoUpdatePending) todoScheduleReload(); });
+document.addEventListener('focusout',()=>{
+  if(todoUpdatePending && !todoIsTyping()) todoAutoReloadWhenSafe();
 });
+document.addEventListener('visibilitychange',()=>{
+  if(todoUpdatePending && document.visibilityState==='visible' && !todoIsTyping()) todoAutoReloadWhenSafe();
+});
+
 if('serviceWorker' in navigator && location.protocol!=='file:'){
   window.addEventListener('load',async()=>{
     try{
       const reg=await navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});
       window.todoUpdateRegistration=reg;
-      reg.update();
+      await reg.update();
       reg.addEventListener('updatefound',()=>{
         const nw=reg.installing;
         if(nw) nw.addEventListener('statechange',()=>{
           if(nw.state==='installed' && navigator.serviceWorker.controller){
-            todoShowUpdate();
+            todoUpdatePending=true;
+            if(!todoIsTyping()) todoAutoReloadWhenSafe();
           }
         });
       });
       await todoCheckForUpdate();
-      setInterval(todoCheckForUpdate,60000);
+      setInterval(todoCheckForUpdate,30000);
     }catch(e){}
   });
 }
@@ -1365,6 +1420,187 @@ body.live-mode #livePanel .live-rows{height:calc(100% - 42px)!important;min-heig
   body.live-mode #livePanel #liveTopTotal .live-top-total-value{font-size:25px!important}
 }
 </style>
+
+<style id="todo-responsive-v110">
+html,body{width:100%;min-width:0;overflow-x:hidden;}
+body{margin:0;}
+.app,.shell,.layout,.main-layout{max-width:none!important;width:100%!important;box-sizing:border-box;}
+main,.main,.content,.workspace{min-width:0!important;max-width:none!important;box-sizing:border-box;}
+/* El calendario lateral se elimina */
+.calendar-card,.calendar-panel,.calendar-widget,.calendar,.right-calendar,[class*="calendar-card"],[class*="calendar-panel"]{display:none!important;}
+/* La zona principal ocupa el espacio que deja el menú */
+.content-grid,.dashboard-grid,.main-grid{grid-template-columns:minmax(0,1fr)!important;width:100%!important;max-width:none!important;}
+.table-wrap,.sales-table-wrap,.local-table,.live-table{min-width:0!important;max-width:100%!important;overflow-x:hidden;}
+@media (max-width:1400px){
+  .main-content,.content,.workspace{padding-left:14px!important;padding-right:14px!important;}
+  .summary-cards{gap:8px!important;}
+  .summary-card{min-width:0!important;}
+}
+@media (max-width:1200px){
+  .sidebar{width:220px!important;min-width:220px!important;}
+  .main-content,.content,.workspace{padding:10px!important;}
+  .summary-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+}
+@media (max-width:900px){
+  .sidebar{width:190px!important;min-width:190px!important;}
+  .summary-cards{grid-template-columns:1fr 1fr!important;}
+}
+@media (max-width:700px){
+  .sidebar{width:100%!important;min-width:0!important;}
+  .app-shell,.shell{flex-direction:column!important;}
+  .summary-cards{grid-template-columns:1fr!important;}
+}
+</style>
+
+<style id="v113-fixed-summary">
+/* V113: tarjetas superiores con tamaño estable. Los textos de la tabla ya no pueden modificar su ancho. */
+.pro-dashboard{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:12px!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+.pro-stat{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:78px!important;
+  min-height:78px!important;
+  max-height:78px!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+  flex:none!important;
+}
+.pro-stat-icon{
+  width:52px!important;
+  height:52px!important;
+  min-width:52px!important;
+  min-height:52px!important;
+  font-size:25px!important;
+}
+.pro-stat-label,.pro-stat-value{
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  min-width:0!important;
+}
+.pro-stat-value{font-size:23px!important;line-height:1.15!important;}
+.pro-dashboard *{box-sizing:border-box!important;}
+@media(max-width:1150px){
+  .pro-dashboard{gap:8px!important;}
+  .pro-stat{padding:12px!important;gap:9px!important;}
+  .pro-stat-icon{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;font-size:23px!important;}
+  .pro-stat-value{font-size:20px!important;}
+}
+@media(max-width:850px){
+  .pro-dashboard{grid-template-columns:repeat(2,minmax(0,1fr))!important;overflow:visible!important;}
+}
+</style>
+
+<style id="v115-summary-reference-final">
+/* V115 - resumen superior fijo, sin que el contenido de la tabla pueda alterar su tamaño */
+.pro-dashboard{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:82px!important;
+  min-height:82px!important;
+  max-height:82px!important;
+  overflow:hidden!important;
+  align-items:stretch!important;
+  box-sizing:border-box!important;
+  flex:none!important;
+}
+.pro-dashboard .pro-stat{
+  display:grid!important;
+  grid-template-columns:34px minmax(0,1fr)!important;
+  grid-template-rows:22px 36px!important;
+  column-gap:10px!important;
+  align-items:center!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:82px!important;
+  min-height:82px!important;
+  max-height:82px!important;
+  padding:10px 14px!important;
+  margin:0!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+  flex:none!important;
+}
+.pro-dashboard .pro-stat-icon{
+  grid-column:1;grid-row:1 / span 2!important;
+  width:34px!important;height:34px!important;
+  min-width:34px!important;min-height:34px!important;
+  max-width:34px!important;max-height:34px!important;
+  margin:0!important;
+  border-radius:9px!important;
+  font-size:17px!important;
+}
+.pro-dashboard .pro-stat>div:last-child{
+  grid-column:2!important;grid-row:1 / span 2!important;
+  display:grid!important;
+  grid-template-rows:22px 36px!important;
+  width:100%!important;min-width:0!important;max-width:100%!important;
+  overflow:hidden!important;
+}
+.pro-dashboard .pro-stat-label{
+  width:100%!important;height:22px!important;line-height:22px!important;
+  margin:0!important;padding:0!important;
+  font-size:13px!important;font-weight:800!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.pro-dashboard .pro-stat-value{
+  width:100%!important;height:36px!important;line-height:36px!important;
+  margin:0!important;padding:0!important;
+  font-size:27px!important;font-weight:900!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  min-width:0!important;
+}
+/* La tarjeta DIA no se elimina de los datos: solo deja de ocupar espacio en el resumen superior. */
+.pro-dashboard .pro-stat.status{display:none!important;}
+.pro-dashboard,.pro-dashboard *{box-sizing:border-box!important;min-width:0!important;}
+@media(max-width:1100px) and (min-width:761px){
+  .pro-dashboard{height:76px!important;min-height:76px!important;max-height:76px!important;gap:6px!important;}
+  .pro-dashboard .pro-stat{height:76px!important;min-height:76px!important;max-height:76px!important;padding:8px 10px!important;grid-template-columns:32px minmax(0,1fr)!important;grid-template-rows:20px 34px!important;column-gap:8px!important;}
+  .pro-dashboard .pro-stat-icon{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;font-size:16px!important;}
+  .pro-dashboard .pro-stat>div:last-child{grid-template-rows:20px 34px!important;}
+  .pro-dashboard .pro-stat-label{height:20px!important;line-height:20px!important;font-size:12px!important;}
+  .pro-dashboard .pro-stat-value{height:34px!important;line-height:34px!important;font-size:24px!important;}
+}
+@media(max-width:760px){
+  .pro-dashboard{grid-template-columns:repeat(2,minmax(0,1fr))!important;height:72px!important;min-height:72px!important;max-height:72px!important;}
+  .pro-dashboard .pro-stat{height:72px!important;min-height:72px!important;max-height:72px!important;padding:7px 9px!important;grid-template-columns:30px minmax(0,1fr)!important;grid-template-rows:19px 32px!important;column-gap:7px!important;}
+  .pro-dashboard .pro-stat-icon{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;font-size:15px!important;}
+  .pro-dashboard .pro-stat>div:last-child{grid-template-rows:19px 32px!important;}
+  .pro-dashboard .pro-stat-label{height:19px!important;line-height:19px!important;font-size:11px!important;}
+  .pro-dashboard .pro-stat-value{height:32px!important;line-height:32px!important;font-size:21px!important;}
+}
+</style>
+
+<style id="v116-stat-icons-final">
+/* V116: iconos pequeños alineados con la etiqueta superior, sin alterar el tamaño de las tarjetas. */
+.pro-dashboard{grid-template-columns:repeat(3,minmax(0,1fr))!important;min-width:0!important;width:100%!important;box-sizing:border-box!important;}
+.pro-stat{height:78px!important;min-height:78px!important;max-height:78px!important;padding:10px 14px!important;display:flex!important;align-items:flex-start!important;gap:10px!important;min-width:0!important;overflow:hidden!important;box-sizing:border-box!important;}
+.pro-stat-icon{width:30px!important;height:30px!important;min-width:30px!important;max-width:30px!important;border-radius:8px!important;font-size:16px!important;line-height:30px!important;flex:0 0 30px!important;margin-top:1px!important;align-self:flex-start!important;}
+.pro-stat > div:not(.pro-stat-icon){min-width:0!important;overflow:hidden!important;}
+.pro-stat-label{height:18px!important;line-height:18px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+.pro-stat-value{height:31px!important;line-height:31px!important;margin-top:1px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important;font-size:23px!important;}
+@media(max-width:1050px){.pro-stat{height:72px!important;min-height:72px!important;max-height:72px!important;padding:9px 11px!important}.pro-stat-icon{width:28px!important;height:28px!important;min-width:28px!important;max-width:28px!important;font-size:15px!important;line-height:28px!important}.pro-stat-value{font-size:20px!important}}
+</style>
+
+<style id="v120-solo-importes">
+/* V120: en las tarjetas grandes solo se muestra el importe, nunca las palabras TOTAL/PENDIENTE. */
+.pro-stat-value#proTotal,.pro-stat-value#proPending{font-size:23px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+.bottom.pro-hidden-calcs,.bottom.pro-hidden-calcs #total,.bottom.pro-hidden-calcs #pending{display:none!important;}
+</style>
 </head>
 <body>
 
@@ -1441,8 +1677,8 @@ body.live-mode #livePanel .live-rows{height:calc(100% - 42px)!important;min-heig
 </div>
 
 <div class="bottom pro-hidden-calcs" aria-hidden="true">
-  <div class="total" id="total">TOTAL: $ 0</div>
-  <div class="pending" id="pending">PENDIENTE: $ 0</div>
+  <div class="total" id="total">$ 0</div>
+  <div class="pending" id="pending">$ 0</div>
   <div class="status" id="status">🟢 DÍA ABIERTO</div>
   
 </div>
@@ -1611,6 +1847,7 @@ syncWithToday();
 const $=id=>document.getElementById(id);
 function save(){localStorage.setItem(KEY,JSON.stringify(data))}
 function number(v){return Number(String(v).replace(/\./g,"").replace(",","."))||0}
+function numberSumFromText(v){const m=String(v||"").match(/\d[\d.,]*/g)||[];return m.reduce((a,x)=>a+number(x),0)}
 function format(n){return "$ "+Number(n||0).toLocaleString("es-AR",{minimumFractionDigits:0,maximumFractionDigits:2})}
 function formatInput(el){
  let raw=el.value.replace(/[^\d,]/g,"");
@@ -1794,6 +2031,9 @@ function openLiveHistory(){
   $("historyBox").style.display="none";
   $("livePanel").style.display="none";
   $("liveHistoryBox").style.display="block";
+  /* V123: EN VIVO usa exactamente el mismo comportamiento espacial que Historial Local.
+     En notebook, el área principal se corre/achica y el historial queda completo a la derecha. */
+  document.body.classList.add("history-open");
   renderLiveHistory();
 }
 function saveLiveHistory(){
@@ -1858,14 +2098,14 @@ function draw(){
    r.innerHTML='<div class="cell number">'+(i+1)+'</div>'+
    '<div class="cell money"><input type="text" inputmode="decimal" placeholder="0"></div>'+
    '<div class="cell"><input type="text" placeholder="Detalle"></div>'+ 
-   '<div class="cell money"><input type="text" inputmode="decimal" placeholder="0"></div>';
+   '<div class="cell money debe-cell"><input class="debe-input" type="text" inputmode="decimal" placeholder="0" autocomplete="off"></div>';
    const inputs=[...r.querySelectorAll("input")];
    inputs[0].value=item.rows[i].p; inputs[1].value=item.rows[i].t; inputs[2].value=item.rows[i].d;
    inputs.forEach((el,k)=>{
      el.readOnly=false;
      el.disabled=false;
      el.addEventListener("input",()=>{
-       if(k===0||k===2)el.value=formatInput(el);
+       if(k===0)el.value=formatInput(el);
        item.rows[i][["p","t","d"][k]]=el.value; calc();
        if(editingDate){
          const h=data.history.find(x=>x.date===editingDate); if(h) recalcHistory(h);
@@ -1873,7 +2113,7 @@ function draw(){
        save();
      });
      el.addEventListener("blur",()=>{
-       if(k===0||k===2){el.value=formatInput(el);item.rows[i][["p","t","d"][k]]=el.value;save();calc()}
+       if(k===0){el.value=formatInput(el);item.rows[i][["p","t","d"][k]]=el.value;save();calc()}
      });
      el.addEventListener("keydown",e=>{
        const targetRow=(e.key==="Enter"||e.key==="ArrowDown")?i+1:e.key==="ArrowUp"?i-1:i;
@@ -1888,20 +2128,28 @@ function draw(){
    });
    rows.appendChild(r);
  }
+ ensureDebeEditable();
  $("status").textContent=editingDate?"🟠 DÍA CERRADO — EDITABLE":(data.current.closed?"🔴 DÍA CERRADO":"🟢 DÍA ABIERTO");
  calc();
 }
+
+/* V122: asegurar que todas las celdas DEBE/FALTA sean editables */
+function ensureDebeEditable(){
+  document.querySelectorAll('#rows .data-row .debe-input').forEach(el=>{
+    el.disabled=false; el.readOnly=false; el.tabIndex=0;
+  });
+}
 function calc(){
- const item=active(); let t=0,p=0;item.rows.forEach(r=>{t+=number(r.p);p+=number(r.d)});
+ const item=active(); let t=0,p=0;item.rows.forEach(r=>{t+=number(r.p);p+=numberSumFromText(r.d)});
  const totalEl=$("total"), pendingEl=$("pending");
- if(totalEl) totalEl.textContent="TOTAL: "+format(t);
- if(pendingEl) pendingEl.textContent="PENDIENTE: "+format(p);
+ if(totalEl) totalEl.textContent=format(t);
+ if(pendingEl) pendingEl.textContent=format(p);
  if($("proTotal")) $("proTotal").textContent=format(t);
  if($("proPending")) $("proPending").textContent=format(p);
  if($("proRecords")) $("proRecords").textContent=item.rows.filter(r=>String(r.p||r.t||r.d||"").trim()!=="").length;
  if($("proDayStatus")) $("proDayStatus").textContent=data.current.closed?"Cerrado 🔴":"Abierto 🟢";
 }
-function recalcHistory(h){let t=0,p=0;h.rows.forEach(r=>{t+=number(r.p);p+=number(r.d)});h.total=t;h.pending=p}
+function recalcHistory(h){let t=0,p=0;h.rows.forEach(r=>{t+=number(r.p);p+=numberSumFromText(r.d)});h.total=t;h.pending=p}
 $("closeBtn").onclick=()=>{
  if(data.current.closed)return;
  if(!confirm("¿Cerrar este día y guardar el historial LOCAL y EN VIVO?"))return;
@@ -3334,7 +3582,7 @@ body.history-editing #saveEditBtn,body.history-editing #backBtn{display:inline-f
         save();
         let total=0,pending=0,count=0; data.current.rows.forEach(x=>{total+=num(x.p);pending+=num(x.d);if(String(x.p||x.t||x.d||'').trim())count++});
         const a=document.getElementById('total'),b=document.getElementById('pending'),c=document.getElementById('proTotal'),d=document.getElementById('proPending'),e=document.getElementById('proRecords');
-        if(a)a.textContent='TOTAL: '+money(total); if(b)b.textContent='PENDIENTE: '+money(pending); if(c)c.textContent=money(total); if(d)d.textContent=money(pending); if(e)e.textContent=count;
+        if(a)a.textContent='TOTAL: '+money(total); if(b)b.textContent='PENDIENTE: '+money(pending); if(c)c.textContent=money(total).replace(/^TOTAL:\s*/,''); if(d)d.textContent=money(pending).replace(/^PENDIENTE:\s*/,''); if(e)e.textContent=count;
       }));
       rows.appendChild(r);
     }
@@ -3342,7 +3590,194 @@ body.history-editing #saveEditBtn,body.history-editing #backBtn{display:inline-f
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
 })();
 </script>
-</body>
+<style id="backup-v1-css">.backup-tools{margin-top:12px;padding:12px;border-top:1px solid rgba(255,255,255,.12)}.backup-tools button{width:100%;margin:4px 0;padding:10px;border:0;border-radius:8px;font-weight:700;cursor:pointer}.backup-export{background:#5bc0eb;color:#06111b}.backup-import{background:#fff;color:#111}.backup-msg{font-size:11px;color:#d7e9f5;text-align:center;margin-top:6px;min-height:14px}</style><script id="backup-v1-js">(function(){const MAIN='TODO_EN_UNO_V11';function snapshot(){const out={app:'TODO EN UNO',format:1,createdAt:new Date().toISOString(),storage:{}};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('TODO_EN_UNO'))out.storage[k]=localStorage.getItem(k)}return out}function msg(t){const e=document.getElementById('backupMsg');if(e)e.textContent=t}function exportBackup(){try{const blob=new Blob([JSON.stringify(snapshot(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='TODO_EN_UNO_BACKUP_'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);msg('Copia guardada correctamente ✓')}catch(e){msg('No se pudo crear la copia')}}function importBackup(file){if(!file)return;const r=new FileReader();r.onload=function(){try{const b=JSON.parse(r.result);if(!b||b.app!=='TODO EN UNO'||!b.storage||typeof b.storage!=='object')throw new Error('invalid');if(!confirm('Esto reemplazará los datos actuales de TODO EN UNO por la copia seleccionada. ¿Continuar?'))return;Object.keys(b.storage).forEach(k=>localStorage.setItem(k,String(b.storage[k])));alert('Copia restaurada correctamente. La web se recargará.');location.reload()}catch(e){alert('El archivo no es una copia válida de TODO EN UNO.')}};r.readAsText(file)}function install(){const host=document.querySelector('.pro-sidebar')||document.querySelector('.pro-sidebar-inner')||document.querySelector('.pro-left-controls');if(!host||document.getElementById('backupTools'))return;const box=document.createElement('div');box.id='backupTools';box.className='backup-tools';box.innerHTML='<div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:5px">💾 COPIA DE SEGURIDAD</div><button class="backup-export" id="backupExport">EXPORTAR DATOS</button><button class="backup-import" id="backupImport">IMPORTAR DATOS</button><input id="backupFile" type="file" accept="application/json,.json" style="display:none"><div id="backupMsg" class="backup-msg"></div>';host.appendChild(box);document.getElementById('backupExport').onclick=exportBackup;document.getElementById('backupImport').onclick=()=>document.getElementById('backupFile').click();document.getElementById('backupFile').onchange=e=>importBackup(e.target.files[0])}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();})();</script>
+<style id="v112-final-responsive">
+/* V112 — ajuste real para PC y notebook: nada se sale de la ventana */
+html,body{width:100vw!important;min-width:0!important;max-width:100vw!important;margin:0!important;padding:0!important;overflow:hidden!important;box-sizing:border-box!important}
+*,*::before,*::after{box-sizing:border-box!important}
+
+/* Menú lateral fijo y área principal exactamente dentro del viewport */
+.pro-sidebar{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:230px!important;min-width:230px!important;max-width:230px!important;overflow-y:auto!important;overflow-x:hidden!important}
+.app{position:fixed!important;left:230px!important;right:0!important;top:0!important;bottom:0!important;width:auto!important;max-width:none!important;height:100vh!important;min-width:0!important;min-height:0!important;margin:0!important;padding:8px 8px 30px!important;overflow:hidden!important}
+.app>header,.app>.pro-dashboard,.app>.pro-main-grid{width:100%!important;max-width:none!important;min-width:0!important}
+.app>header{overflow:hidden!important}
+.pro-header-brand{min-width:0!important;overflow:hidden!important}
+.pro-header-brand h1{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.pro-header-clock{min-width:0!important;max-width:42%!important;flex:0 1 auto!important;overflow:hidden!important}
+
+/* Cuatro tarjetas siempre entran en el ancho disponible */
+.pro-dashboard{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important;min-width:0!important}
+.pro-stat{min-width:0!important;overflow:hidden!important}
+.pro-stat-value,.pro-stat-label{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+
+/* Zona central: tabla + calculadora, sin desbordar */
+.pro-main-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(220px,270px)!important;gap:8px!important;width:100%!important;min-width:0!important;max-width:none!important;overflow:hidden!important}
+.pro-main-content{min-width:0!important;max-width:none!important;width:100%!important;overflow:hidden!important}
+.pro-main-content>.sheet,.pro-main-content>#livePanel{width:100%!important;min-width:0!important;max-width:none!important}
+.pro-side-stack{display:flex!important;flex-direction:column!important;width:100%!important;min-width:0!important;max-width:none!important;overflow:hidden!important}
+.pro-side-stack>.pro-mini-card{width:100%!important;min-width:0!important;max-width:none!important}
+
+/* Quitar por completo el calendario, incluido su contenedor */
+.pro-side-stack>.pro-mini-card:has(#proCalendar){display:none!important}
+.pro-side-stack .pro-calendar{display:none!important}
+
+/* Calculadora siempre contenida en su columna */
+.calculator-card-only{width:100%!important;min-width:0!important;max-width:none!important;overflow:hidden!important}
+#webCalc{width:100%!important;min-width:0!important;max-width:none!important}
+#webCalc button{min-width:0!important}
+
+/* Tabla sin forzar un ancho mínimo que empuje la calculadora fuera de pantalla */
+.sheet,.header-row,.data-row{min-width:0!important;max-width:100%!important}
+.header-row,.data-row{grid-template-columns:55px minmax(170px,300px) minmax(240px,1fr) minmax(150px,260px)!important}
+.data-scroll{width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important}
+
+/* PC de escritorio */
+@media (min-width:1441px){
+  .pro-sidebar{width:240px!important;min-width:240px!important;max-width:240px!important}
+  .app{left:240px!important}
+  .pro-main-grid{grid-template-columns:minmax(0,1fr) 285px!important}
+}
+
+/* Notebook 1366x768 / 1280x720 */
+@media (max-width:1440px) and (min-width:1101px){
+  .pro-sidebar{width:205px!important;min-width:205px!important;max-width:205px!important;padding:12px 10px!important}
+  .app{left:205px!important;padding:6px 7px 28px!important}
+  .pro-main-grid{grid-template-columns:minmax(0,1fr) 225px!important;gap:7px!important;height:calc(100vh - 154px)!important}
+  .pro-side-stack{width:225px!important}
+  .pro-stat{padding:8px 9px!important;min-height:62px!important}
+  .pro-stat-value{font-size:19px!important}
+  .pro-stat-label{font-size:10px!important}
+  .pro-header-brand h1{font-size:21px!important}
+  .pro-header-clock{max-width:38%!important;padding:6px 9px!important}
+  .pro-clock-time{font-size:21px!important}
+  .header-row{height:38px!important}
+  .data-row{height:40px!important;min-height:40px!important}
+  .data-row input{font-size:13px!important}
+  #webCalc .wc-display{height:58px!important;font-size:28px!important}
+  #webCalc button{height:38px!important;font-size:13px!important}
+}
+
+/* PC/notebook más angosta */
+@media (max-width:1100px) and (min-width:761px){
+  .pro-sidebar{width:180px!important;min-width:180px!important;max-width:180px!important}
+  .app{left:180px!important;padding:5px!important}
+  .pro-main-grid{grid-template-columns:minmax(0,1fr) 210px!important;height:calc(100vh - 145px)!important}
+  .pro-side-stack{width:210px!important}
+  .pro-dashboard{gap:5px!important}
+  .pro-stat{padding:7px!important}
+  .pro-stat-icon{display:none!important}
+}
+
+/* Pantallas chicas */
+@media (max-width:760px){
+  html,body{overflow:auto!important}
+  .pro-sidebar{width:74px!important;min-width:74px!important;max-width:74px!important}
+  .app{left:74px!important;right:0!important;padding:5px!important;height:auto!important;min-height:100vh!important;overflow:visible!important}
+  .pro-dashboard{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .pro-main-grid{grid-template-columns:1fr!important;height:auto!important;overflow:visible!important}
+  .pro-side-stack{display:none!important}
+}
+</style>
+<script>
+(function(){
+  function removeCalendar(){
+    document.querySelectorAll('.pro-side-stack > .pro-mini-card').forEach(function(card){
+      if(card.querySelector('#proCalendar')) card.remove();
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',removeCalendar); else removeCalendar();
+})();
+</script>
+
+
+<style id="v117-resumen-exacto-referencia">
+/* V117 — resumen exactamente con el formato de la referencia: 3 tarjetas iguales */
+.pro-dashboard{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0 0 8px!important;
+  align-items:stretch!important;
+}
+.pro-stat.status{display:none!important;}
+.pro-stat{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:78px!important;
+  min-height:78px!important;
+  max-height:78px!important;
+  padding:8px 12px!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:flex-start!important;
+  gap:10px!important;
+  overflow:hidden!important;
+}
+.pro-stat-icon{
+  width:24px!important;
+  height:24px!important;
+  min-width:24px!important;
+  min-height:24px!important;
+  flex:0 0 24px!important;
+  border-radius:7px!important;
+  font-size:13px!important;
+  line-height:24px!important;
+  margin:2px 0 0!important;
+}
+.pro-stat>div:last-child{
+  min-width:0!important;
+  width:0!important;
+  flex:1 1 auto!important;
+  overflow:hidden!important;
+}
+.pro-stat-label{
+  display:block!important;
+  width:100%!important;
+  height:18px!important;
+  line-height:18px!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.pro-stat-value{
+  display:block!important;
+  width:100%!important;
+  height:34px!important;
+  line-height:34px!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:27px!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  min-width:0!important;
+}
+.pro-dashboard,.pro-dashboard *{box-sizing:border-box!important;}
+@media(max-width:1100px) and (min-width:761px){
+  .pro-dashboard{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;}
+  .pro-stat{height:76px!important;min-height:76px!important;max-height:76px!important;padding:8px 10px!important;gap:8px!important;}
+  .pro-stat-icon{width:23px!important;height:23px!important;min-width:23px!important;min-height:23px!important;font-size:12px!important;}
+  .pro-stat-label{font-size:11px!important;height:17px!important;line-height:17px!important;}
+  .pro-stat-value{font-size:23px!important;height:31px!important;line-height:31px!important;}
+}
+@media(max-width:760px){
+  .pro-dashboard{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;}
+  .pro-stat{height:72px!important;min-height:72px!important;max-height:72px!important;padding:8px 9px!important;}
+  .pro-stat-icon{width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;font-size:11px!important;}
+  .pro-stat-label{font-size:11px!important;height:16px!important;line-height:16px!important;}
+  .pro-stat-value{font-size:20px!important;height:27px!important;line-height:27px!important;}
+}
+</style>
+
 </html>
 <style id="v96-clean-menu">
 .pro-nav-btn[data-action="caja"],.pro-nav-btn[data-action="productos"],.pro-nav-btn[data-action="gastos"],.pro-nav-btn[data-action="estadisticas"]{display:none!important}
@@ -3350,3 +3785,106 @@ body.history-editing #saveEditBtn,body.history-editing #backBtn{display:inline-f
 .calculator-card-only .pro-quick{display:flex!important}
 .calculator-card-only .pro-quick [data-quick="calc"]{display:block!important;width:100%!important}
 </style>
+
+<style id="v114-resumen-estilo-referencia">
+/* V114 — tarjetas de resumen fijas, siguiendo el diseño de referencia */
+.pro-dashboard{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0 0 8px!important;
+  align-items:stretch!important;
+}
+.pro-stat{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:80px!important;
+  min-height:80px!important;
+  max-height:80px!important;
+  box-sizing:border-box!important;
+  padding:10px 12px!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:flex-start!important;
+  gap:10px!important;
+  overflow:hidden!important;
+  flex:none!important;
+}
+.pro-stat-icon{
+  width:28px!important;
+  height:28px!important;
+  min-width:28px!important;
+  min-height:28px!important;
+  border-radius:8px!important;
+  font-size:15px!important;
+  flex:0 0 28px!important;
+  margin-top:1px!important;
+}
+.pro-stat>div:last-child{
+  min-width:0!important;
+  flex:1 1 auto!important;
+  width:0!important;
+  overflow:hidden!important;
+}
+.pro-stat-label{
+  display:block!important;
+  width:100%!important;
+  height:18px!important;
+  line-height:18px!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.pro-stat-value{
+  display:block!important;
+  width:100%!important;
+  height:34px!important;
+  line-height:34px!important;
+  margin:1px 0 0!important;
+  padding:0!important;
+  font-size:26px!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  min-width:0!important;
+}
+/* Nunca permitir que el contenido cambie el tamaño de la tarjeta */
+.pro-dashboard,.pro-dashboard *{box-sizing:border-box!important;}
+@media(max-width:1100px) and (min-width:761px){
+  .pro-dashboard{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important;}
+  .pro-stat{height:76px!important;min-height:76px!important;max-height:76px!important;padding:9px 10px!important;gap:8px!important;}
+  .pro-stat-icon{width:27px!important;height:27px!important;min-width:27px!important;min-height:27px!important;font-size:14px!important;}
+  .pro-stat-label{font-size:12px!important;height:17px!important;line-height:17px!important;}
+  .pro-stat-value{font-size:22px!important;height:30px!important;line-height:30px!important;}
+}
+@media(max-width:760px){
+  .pro-dashboard{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;}
+  .pro-stat{height:72px!important;min-height:72px!important;max-height:72px!important;padding:8px 9px!important;}
+  .pro-stat-icon{width:26px!important;height:26px!important;min-width:26px!important;min-height:26px!important;font-size:13px!important;}
+  .pro-stat-label{font-size:11px!important;height:16px!important;line-height:16px!important;}
+  .pro-stat-value{font-size:20px!important;height:27px!important;line-height:27px!important;}
+}
+</style>
+<style id="v120-hard-fix">
+#total,#pending{display:none!important;}
+.pro-stat-value#proTotal,.pro-stat-value#proPending{display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+</style>
+<script id="v120-hard-fix-js">
+(function(){
+ function clean(id){const el=document.getElementById(id);if(!el)return;const raw=String(el.textContent||'').trim();const cleaned=raw.replace(/^TOTAL\s*:\s*/i,'').replace(/^PENDIENTE\s*:\s*/i,'').trim();if(cleaned!==raw)el.textContent=cleaned;}
+ function apply(){clean('proTotal');clean('proPending');}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);else apply();
+ const watch=new MutationObserver(apply);
+ function observe(){['proTotal','proPending'].forEach(id=>{const e=document.getElementById(id);if(e)watch.observe(e,{childList:true,characterData:true,subtree:true});});}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',observe);else observe();
+ setInterval(apply,100);
+})();
+</script>
